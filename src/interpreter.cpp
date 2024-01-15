@@ -345,18 +345,28 @@ RuntimeValPtr Interpreter::evaluate_callexpr(CallExpr* node)
 RuntimeValPtr* Interpreter::evaluate_memberexpr(MemberExpr* node)
 {
     RuntimeValPtr object = evaluate_expr(node->object);
-    if (object->type == RuntimeType::List) {
-        std::shared_ptr<List> object_list = std::dynamic_pointer_cast<List>(object);
-        RuntimeValPtr index = evaluate_expr(node->index);
-        if (index->type == RuntimeType::Number) {
-            std::shared_ptr<Number> index_num = std::dynamic_pointer_cast<Number>(index);
-            return &(object_list->elements[(int)(index_num->value)]);
-        }
+
+    if (object->type != RuntimeType::List) {
+        // Error: only lists can be indexed
+        runtime_error("Only lists can be indexed.", node->begin);
+    }
+
+    std::shared_ptr<List> object_list = std::dynamic_pointer_cast<List>(object);
+    RuntimeValPtr index = evaluate_expr(node->index);
+
+    if (index->type != RuntimeType::Number) {
         // Error: list index must be number
         runtime_error("List index must be number.", node->index->begin);
     }
-    // Error: only lists can be indexed
-    runtime_error("Only lists can be indexed.", node->begin);
+
+    std::shared_ptr<Number> index_num = std::dynamic_pointer_cast<Number>(index);
+
+    if (index_num->value >= object_list->elements.size() || index_num->value < 0) {
+        // Error: list index out of range
+        runtime_error("List index out of range.", node->index->begin);
+    }
+
+    return &(object_list->elements[(int)(index_num->value)]);
 }
 
 RuntimeValPtr Interpreter::evaluate_binaryexpr(BinaryExpr* node)
