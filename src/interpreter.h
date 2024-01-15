@@ -30,6 +30,8 @@ private:
 
     RuntimeValPtr get_var(std::string name);
     FunctionDeclaration* get_func(std::string name);
+    void create_var(std::string name, RuntimeValPtr value);
+    void create_func(std::string name, FunctionDeclaration* func);
     void exit_scope();
 
     RuntimeValPtr evaluate_stmt(Stmt* node);

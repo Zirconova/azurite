@@ -32,6 +32,35 @@ FunctionDeclaration* Interpreter::get_func(std::string name) {
     exit(1);
 }
 
+void Interpreter::create_var(std::string name, RuntimeValPtr value)
+{
+    // Try to reassign existing variable first
+    for (std::vector<Environment*>::reverse_iterator it = scopes.rbegin(); it != scopes.rend(); it++) {
+        if ((*it)->var_map.count(name)) {
+            (*it)->create_var(name, value);
+            return;
+        }
+    }
+
+    // If no existing variable, create in local scope
+    scopes.back()->create_var(name, value);
+}
+
+void Interpreter::create_func(std::string name, FunctionDeclaration* func)
+{
+    // Try to reassign existing function first
+    for (std::vector<Environment*>::reverse_iterator it = scopes.rbegin(); it != scopes.rend(); it++) {
+        if ((*it)->func_map.count(name)) {
+            delete (*it)->func_map[name];
+            (*it)->create_func(name, func);
+            return;
+        }
+    }
+
+    // If no existing function, create in local scope
+    scopes.back()->create_func(name, func);
+}
+
 void Interpreter::exit_scope()
 {
     std::cout << "about to exit scope from " << scopes.size() << " to ";
@@ -138,7 +167,7 @@ void Interpreter::interpret_assignstmt(AssignStmt* node)
 {
     if (node->lhs->type == NodeType::Identifier) {
         Identifier* lhs_id = (Identifier*)(node->lhs);
-        scopes.back()->create_var(lhs_id->name, evaluate_expr(node->rhs));
+        create_var(lhs_id->name, evaluate_expr(node->rhs));
     } else if (node->lhs->type == NodeType::MemberExpr) {
         MemberExpr* lhs_member = (MemberExpr*)(node->lhs);
         // Get double pointer to element indexed
@@ -151,7 +180,7 @@ void Interpreter::interpret_assignstmt(AssignStmt* node)
 
 void Interpreter::interpret_functiondeclaration(FunctionDeclaration* node)
 {
-    scopes.back()->create_func(node->name->name, node);
+    create_func(node->name->name, node);
 }
 
 RuntimeValPtr Interpreter::evaluate_ifstmt(IfStmt* node)
@@ -210,7 +239,7 @@ RuntimeValPtr Interpreter::evaluate_forstmt(ForStmt* node)
 
 RuntimeValPtr Interpreter::evaluate_returnstmt(ReturnStmt* node)
 {
-    return evaluate_expr(node->return_val);
+    return evaluate_expr(node->return_expr);
 }
 
 RuntimeValPtr Interpreter::evaluate_expr(Expr* node)

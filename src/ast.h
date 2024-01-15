@@ -159,9 +159,9 @@ public:
 class ReturnStmt : public Stmt
 {
 public:
-    Expr* return_val;
+    Expr* return_expr;
 
-    ReturnStmt(Expr* return_val, Token begin);
+    ReturnStmt(Expr* return_expr, Token begin);
     ~ReturnStmt();
 };
 

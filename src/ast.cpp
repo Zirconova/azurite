@@ -54,11 +54,11 @@ FunctionDeclaration::~FunctionDeclaration()
     delete body;
 }
 
-ReturnStmt::ReturnStmt(Expr* return_val, Token begin)
-    : Stmt(NodeType::ReturnStmt, begin), return_val(return_val) {}
+ReturnStmt::ReturnStmt(Expr* return_expr, Token begin)
+    : Stmt(NodeType::ReturnStmt, begin), return_expr(return_expr) {}
 ReturnStmt::~ReturnStmt()
 {
-    delete return_val;
+    delete return_expr;
 }
 
 Arguments::Arguments(std::vector<Expr*> arguments, Token begin)
@@ -327,7 +327,7 @@ void printAST(Stmt* node, int indent, bool in_list)
             ReturnStmt* dnode = (ReturnStmt*)(node);
             std::cout << "ReturnStmt\n";
 
-            formatNode("return_val", dnode->return_val, indent);
+            formatNode("return_val", dnode->return_expr, indent);
 
             break;
         }
