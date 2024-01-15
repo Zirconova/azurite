@@ -170,11 +170,11 @@ ForStmt* Parser::parse_forstmt()
 
     expect(TokenType::OpenParen, "Expected '('.");
 
-    Expr* start = parse_primaryexpr();
+    Expr* start = parse_expr();
 
     expect(TokenType::Comma, "Expected ','.");
 
-    Expr* end = parse_primaryexpr();
+    Expr* end = parse_expr();
 
     expect(TokenType::CloseParen, "Expected ')'.");
 

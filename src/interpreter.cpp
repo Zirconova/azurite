@@ -36,8 +36,10 @@ FunctionDeclaration* Interpreter::get_func(std::string name) {
 
 void Interpreter::exit_scope()
 {
+    std::cout << "about to exit scope from " << scopes.size() << " to ";
     delete scopes.back();
     scopes.pop_back();
+    std::cout << scopes.size() << std::endl;
 }
 
 void Interpreter::interpret(std::string source)
@@ -90,8 +92,6 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_stmt(Stmt* node)
         case NodeType::CallExpr: {
             std::cout << "bouta evaluate CallExpr\n";
             evaluate_callexpr((CallExpr*)(node));
-            // After running function, exit the scope it created
-            exit_scope();
             break;
         }
         case NodeType::BinaryExpr: {
@@ -178,7 +178,7 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_forstmt(ForStmt* node)
 
     if (start_val->type != RuntimeType::Number || end_val->type != RuntimeType::Number) {
         // Error: for loop bounds must be numbers
-        runtime_error("For loop bounding must be numbers.", node->start->begin);
+        runtime_error("For loop bounds must be numbers.", node->start->begin);
     }
 
     std::shared_ptr<Number> start = std::dynamic_pointer_cast<Number>(start_val);
@@ -186,7 +186,9 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_forstmt(ForStmt* node)
 
     // Create and enter for loop scope
     Environment* for_scope = new Environment();
+    std::cout << "pushing new scope, now ";
     scopes.push_back(for_scope);
+    std::cout << scopes.size() << " scopes.\n";
 
     // Create iterator variable in for loop scope
     scopes.back()->create_var(node->iterator->name, start);
@@ -202,6 +204,8 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_forstmt(ForStmt* node)
             break;
         }
     }
+
+    exit_scope();
 
     return return_val;
 }
@@ -224,8 +228,6 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_expr(Expr* node)
         }
         case NodeType::CallExpr: {
             std::shared_ptr<RuntimeVal> return_val = evaluate_callexpr((CallExpr*)(node));
-            // After running function, exit the scope it created
-            exit_scope();
 
             if (return_val) {
                 return return_val;
@@ -270,13 +272,17 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_numericliteral(NumericLiteral*
 
 std::shared_ptr<RuntimeVal> Interpreter::evaluate_callexpr(CallExpr* node)
 {
+    std::shared_ptr<RuntimeVal> return_val = nullptr;
+
     Identifier* callee = node->callee;
     Arguments* args = node->arguments;
     std::vector<std::shared_ptr<RuntimeVal>> arg_vals;
     
     // Create and enter function scope
     Environment* func_scope = new Environment();
+    std::cout << "pushing new scope, now";
     scopes.push_back(func_scope);
+    std::cout << scopes.size() << " scopes\n";
 
     // Initialize arguments as variables in function scope
     for (Expr* arg : args->arguments) {
@@ -285,25 +291,28 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_callexpr(CallExpr* node)
 
     // Run built-in function if it exists
     if (Azurite::builtins.count(callee->name)) {
-       return Azurite::call_runtimelib(callee->name, arg_vals);
+       return_val = Azurite::call_runtimelib(callee->name, arg_vals);
     }
     // Else look for FunctionDeclaration in environment
     else {
         FunctionDeclaration* func = get_func(callee->name);
         // Assuming all params are Identifier expressions
-        if (func->params->parameters.size() == arg_vals.size()) {
-            // Initialize scope with param names mapped to arg values
-            for (int i = 0; i < arg_vals.size(); i++) {
-                Identifier* param = func->params->parameters[i];
-                scopes.back()->create_var(param->name, arg_vals[i]);
-            }
-            // Run function body
-            return evaluate_stmt(func->body);
+        if (func->params->parameters.size() != arg_vals.size()) {
+            // Error: length of argument list does not match parameter list
+            runtime_error("Length of argument list does not match parameter list.", node->arguments->begin);
         }
-        // Error: length of argument list does not match parameter list
-        runtime_error("Length of argument list does not match parameter list.", node->arguments->begin);
-        exit(1);
+        // Initialize scope with param names mapped to arg values
+        for (int i = 0; i < arg_vals.size(); i++) {
+            Identifier* param = func->params->parameters[i];
+            scopes.back()->create_var(param->name, arg_vals[i]);
+        }
+        // Run function body
+        return_val = evaluate_stmt(func->body);
     }
+
+    exit_scope();
+
+    return return_val;
 }
 
 std::shared_ptr<RuntimeVal>* Interpreter::evaluate_memberexpr(MemberExpr* node)

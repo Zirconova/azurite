@@ -236,6 +236,21 @@ void printAST(Stmt* node, int indent, bool in_list)
 
             break;
         }
+        case NodeType::Parameters: {
+            Parameters* dnode = (Parameters*)(node);
+            std::cout << "Parameters\n";
+
+            printIndent(indent);
+            std::cout << "parameters: [\n";
+
+            for (Identifier* param : dnode->parameters)
+                printAST(param, indent+1, true);
+            
+            printIndent(indent);
+            std::cout << "]\n";
+            
+            break;
+        }
         case NodeType::CallExpr: {
             CallExpr* dnode = (CallExpr*)(node);
             std::cout << "CallExpr\n";
@@ -275,6 +290,15 @@ void printAST(Stmt* node, int indent, bool in_list)
 
             formatNode("lhs", dnode->lhs, indent);
             formatNode("rhs", dnode->rhs, indent);
+
+            break;
+        }
+        case NodeType::IfStmt: {
+            IfStmt* dnode = (IfStmt*)(node);
+            std::cout << "IfStmt\n";
+
+            formatNode("condition", dnode->condition, indent);
+            formatNode("body", dnode->body, indent);
 
             break;
         }
