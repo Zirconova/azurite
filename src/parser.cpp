@@ -1,5 +1,3 @@
-#include <string>
-
 #include "parser.h"
 
 // Get token at cursor

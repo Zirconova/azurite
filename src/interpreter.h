@@ -1,4 +1,12 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cmath>
+#include <memory>
+
+#include "ast.h"
 #include "parser.h"
+#include "runtimeval.h"
 #include "environment.h"
 #include "runtimelib.h"
 #include "error.h"

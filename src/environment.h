@@ -1,8 +1,11 @@
 #pragma once
 
+#include <iostream>
 #include <unordered_map>
 #include <string>
+#include <memory>
 
+#include "ast.h"
 #include "runtimeval.h"
 
 typedef std::shared_ptr<RuntimeVal> RuntimeValPtr;

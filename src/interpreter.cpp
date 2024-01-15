@@ -1,5 +1,3 @@
-#include <cmath>
-
 #include "interpreter.h"
 
 Interpreter::Interpreter()

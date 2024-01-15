@@ -1,5 +1,3 @@
-#include <cmath>
-
 #include "runtimelib.h"
 
 std::unordered_set<std::string> Azurite::builtins = {"print", "sin"};
