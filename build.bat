@@ -1,0 +1,1 @@
+g++ -o .\bin\az.exe .\src\*.cpp
