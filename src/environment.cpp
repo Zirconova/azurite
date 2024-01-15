@@ -2,7 +2,7 @@
 
 Environment::~Environment()
 {
-    /*for (std::unordered_map<std::string, std::shared_ptr<RuntimeVal>>::iterator it = var_map.begin();
+    /*for (std::unordered_map<std::string, RuntimeValPtr>::iterator it = var_map.begin();
             it != var_map.end(); it++) {
         delete it->second;
     }*/
@@ -12,7 +12,7 @@ Environment::~Environment()
     }
 }
 
-std::shared_ptr<RuntimeVal> Environment::get_var(std::string name)
+RuntimeValPtr Environment::get_var(std::string name)
 {
     if (!var_map.count(name)) {
         std::cout << "Undeclared variable " << name << ".\n";
@@ -21,7 +21,7 @@ std::shared_ptr<RuntimeVal> Environment::get_var(std::string name)
     return var_map[name];
 }
 
-void Environment::create_var(std::string name, std::shared_ptr<RuntimeVal> value)
+void Environment::create_var(std::string name, RuntimeValPtr value)
 {
     var_map[name] = value;
 }

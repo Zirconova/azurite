@@ -1,5 +1,7 @@
 #include "runtimeval.h"
 
+typedef std::shared_ptr<RuntimeVal> RuntimeValPtr;
+
 RuntimeVal::RuntimeVal(RuntimeType type)
     : type(type) {}
 
@@ -17,11 +19,11 @@ bool Bool::get_truth()
     return value;
 }
 
-List::List(std::vector<std::shared_ptr<RuntimeVal>> elements)
+List::List(std::vector<RuntimeValPtr> elements)
     : RuntimeVal(RuntimeType::List), elements(elements) {}
 List::~List()
 {
-    // for (std::shared_ptr<RuntimeVal> element : elements) {
+    // for (RuntimeValPtr element : elements) {
     //     delete element;
     // }
 }

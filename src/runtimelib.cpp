@@ -4,7 +4,7 @@
 
 std::unordered_set<std::string> Azurite::builtins = {"print", "sin"};
 
-std::shared_ptr<RuntimeVal> Azurite::call_runtimelib(std::string name, std::vector<std::shared_ptr<RuntimeVal>>& args)
+RuntimeValPtr Azurite::call_runtimelib(std::string name, std::vector<RuntimeValPtr>& args)
 {
     if (name == "print") {
         return Azurite::print(args);
@@ -13,9 +13,9 @@ std::shared_ptr<RuntimeVal> Azurite::call_runtimelib(std::string name, std::vect
     }
 }
 
-std::shared_ptr<RuntimeVal> Azurite::print(std::vector<std::shared_ptr<RuntimeVal>>& args)
+RuntimeValPtr Azurite::print(std::vector<RuntimeValPtr>& args)
 {
-    for (std::shared_ptr<RuntimeVal> arg : args) {
+    for (RuntimeValPtr arg : args) {
         switch(arg->type) {
             case RuntimeType::Number: {
                 std::shared_ptr<Number> arg_num = std::dynamic_pointer_cast<Number>(arg);
@@ -38,7 +38,7 @@ std::shared_ptr<RuntimeVal> Azurite::print(std::vector<std::shared_ptr<RuntimeVa
     return nullptr;
 }
 
-std::shared_ptr<RuntimeVal> Azurite::sin(std::vector<std::shared_ptr<RuntimeVal>>& args)
+RuntimeValPtr Azurite::sin(std::vector<RuntimeValPtr>& args)
 {
     if (args[0]->type == RuntimeType::Number) {
         std::shared_ptr<Number> arg_num = std::dynamic_pointer_cast<Number>(args[0]);

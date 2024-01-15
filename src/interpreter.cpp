@@ -13,7 +13,7 @@ Interpreter::~Interpreter()
     delete global_scope;
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::get_var(std::string name) {
+RuntimeValPtr Interpreter::get_var(std::string name) {
     std::cout << "Checking for var, num scopes: " << scopes.size() << std::endl;
     for (std::vector<Environment*>::reverse_iterator it = scopes.rbegin(); it != scopes.rend(); it++) {
         if ((*it)->var_map.count(name)) {
@@ -52,9 +52,9 @@ void Interpreter::interpret(std::string source)
     evaluate_stmt(program->body);
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_stmt(Stmt* node)
+RuntimeValPtr Interpreter::evaluate_stmt(Stmt* node)
 {
-    std::shared_ptr<RuntimeVal> return_val = nullptr;
+    RuntimeValPtr return_val = nullptr;
 
     std::cout << "in evaluate_stmt\n";
 
@@ -122,9 +122,9 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_stmt(Stmt* node)
     return return_val;
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_stmts(Stmts* node)
+RuntimeValPtr Interpreter::evaluate_stmts(Stmts* node)
 {
-    std::shared_ptr<RuntimeVal> return_val = nullptr;
+    RuntimeValPtr return_val = nullptr;
 
     for (Stmt* stmt : ((Stmts*)(node))->stmts) {
         return_val = evaluate_stmt(stmt);
@@ -144,7 +144,7 @@ void Interpreter::interpret_assignstmt(AssignStmt* node)
     } else if (node->lhs->type == NodeType::MemberExpr) {
         MemberExpr* lhs_member = (MemberExpr*)(node->lhs);
         // Get double pointer to element indexed
-        std::shared_ptr<RuntimeVal>* object = evaluate_memberexpr(lhs_member);
+        RuntimeValPtr* object = evaluate_memberexpr(lhs_member);
         // TODO FIX THIS WITH SHARED_PTRs -- I think this works now
         // reallocate new value in same element of vector
         *object = evaluate_expr(node->rhs);
@@ -156,9 +156,9 @@ void Interpreter::interpret_functiondeclaration(FunctionDeclaration* node)
     scopes.back()->create_func(node->name->name, node);
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_ifstmt(IfStmt* node)
+RuntimeValPtr Interpreter::evaluate_ifstmt(IfStmt* node)
 {
-    std::shared_ptr<RuntimeVal> return_val = nullptr;
+    RuntimeValPtr return_val = nullptr;
 
     bool condition = evaluate_expr(node->condition)->get_truth();
 
@@ -169,12 +169,12 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_ifstmt(IfStmt* node)
     return return_val;
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_forstmt(ForStmt* node)
+RuntimeValPtr Interpreter::evaluate_forstmt(ForStmt* node)
 {
-    std::shared_ptr<RuntimeVal> return_val = nullptr;
+    RuntimeValPtr return_val = nullptr;
 
-    std::shared_ptr<RuntimeVal> start_val = evaluate_expr(node->start);
-    std::shared_ptr<RuntimeVal> end_val = evaluate_expr(node->end);
+    RuntimeValPtr start_val = evaluate_expr(node->start);
+    RuntimeValPtr end_val = evaluate_expr(node->end);
 
     if (start_val->type != RuntimeType::Number || end_val->type != RuntimeType::Number) {
         // Error: for loop bounds must be numbers
@@ -210,12 +210,12 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_forstmt(ForStmt* node)
     return return_val;
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_returnstmt(ReturnStmt* node)
+RuntimeValPtr Interpreter::evaluate_returnstmt(ReturnStmt* node)
 {
     return evaluate_expr(node->return_val);
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_expr(Expr* node)
+RuntimeValPtr Interpreter::evaluate_expr(Expr* node)
 {
     switch (node->type) {
         case NodeType::NumericLiteral: {
@@ -227,7 +227,7 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_expr(Expr* node)
             break;
         }
         case NodeType::CallExpr: {
-            std::shared_ptr<RuntimeVal> return_val = evaluate_callexpr((CallExpr*)(node));
+            RuntimeValPtr return_val = evaluate_callexpr((CallExpr*)(node));
 
             if (return_val) {
                 return return_val;
@@ -260,23 +260,23 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_expr(Expr* node)
     }
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_identifier(Identifier* node)
+RuntimeValPtr Interpreter::evaluate_identifier(Identifier* node)
 {
     return get_var(node->name);
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_numericliteral(NumericLiteral* node)
+RuntimeValPtr Interpreter::evaluate_numericliteral(NumericLiteral* node)
 {
     return std::make_shared<Number>(node->value);
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_callexpr(CallExpr* node)
+RuntimeValPtr Interpreter::evaluate_callexpr(CallExpr* node)
 {
-    std::shared_ptr<RuntimeVal> return_val = nullptr;
+    RuntimeValPtr return_val = nullptr;
 
     Identifier* callee = node->callee;
     Arguments* args = node->arguments;
-    std::vector<std::shared_ptr<RuntimeVal>> arg_vals;
+    std::vector<RuntimeValPtr> arg_vals;
     
     // Create and enter function scope
     Environment* func_scope = new Environment();
@@ -315,12 +315,12 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_callexpr(CallExpr* node)
     return return_val;
 }
 
-std::shared_ptr<RuntimeVal>* Interpreter::evaluate_memberexpr(MemberExpr* node)
+RuntimeValPtr* Interpreter::evaluate_memberexpr(MemberExpr* node)
 {
-    std::shared_ptr<RuntimeVal> object = evaluate_expr(node->object);
+    RuntimeValPtr object = evaluate_expr(node->object);
     if (object->type == RuntimeType::List) {
         std::shared_ptr<List> object_list = std::dynamic_pointer_cast<List>(object);
-        std::shared_ptr<RuntimeVal> index = evaluate_expr(node->index);
+        RuntimeValPtr index = evaluate_expr(node->index);
         if (index->type == RuntimeType::Number) {
             std::shared_ptr<Number> index_num = std::dynamic_pointer_cast<Number>(index);
             return &(object_list->elements[(int)(index_num->value)]);
@@ -332,10 +332,10 @@ std::shared_ptr<RuntimeVal>* Interpreter::evaluate_memberexpr(MemberExpr* node)
     runtime_error("Only lists can be indexed.", node->begin);
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_binaryexpr(BinaryExpr* node)
+RuntimeValPtr Interpreter::evaluate_binaryexpr(BinaryExpr* node)
 {
-    std::shared_ptr<RuntimeVal> lhs_val = evaluate_expr(node->lhs);
-    std::shared_ptr<RuntimeVal> rhs_val = evaluate_expr(node->rhs);
+    RuntimeValPtr lhs_val = evaluate_expr(node->lhs);
+    RuntimeValPtr rhs_val = evaluate_expr(node->rhs);
 
     std::string op = node->op.value;
 
@@ -389,9 +389,9 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_binaryexpr(BinaryExpr* node)
     }
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_unaryexpr(UnaryExpr* node)
+RuntimeValPtr Interpreter::evaluate_unaryexpr(UnaryExpr* node)
 {
-    std::shared_ptr<RuntimeVal> operand_val = evaluate_expr(node->operand);
+    RuntimeValPtr operand_val = evaluate_expr(node->operand);
 
     std::string op = node->op.value;
 
@@ -419,9 +419,9 @@ std::shared_ptr<RuntimeVal> Interpreter::evaluate_unaryexpr(UnaryExpr* node)
     }
 }
 
-std::shared_ptr<RuntimeVal> Interpreter::evaluate_listdeclaration(ListDeclaration* node)
+RuntimeValPtr Interpreter::evaluate_listdeclaration(ListDeclaration* node)
 {
-    std::vector<std::shared_ptr<RuntimeVal>> elements;
+    std::vector<RuntimeValPtr> elements;
 
     for (Expr* element : node->elements) {
         elements.push_back(evaluate_expr(element));
