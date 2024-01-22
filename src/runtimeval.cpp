@@ -32,12 +32,16 @@ bool List::get_truth()
     return !elements.empty();
 }
 
-Wave::Wave() // TODO
-    : RuntimeVal(RuntimeType::Wave) {}
-Wave::~Wave()
-{
-    // TODO
-}
+Wave::Wave(
+        Expr* wave_expr,
+        Expr* freq_expr,
+        Expr* phase_expr,
+        Expr* vol_expr,
+        Expr* pan_expr
+        )
+    : RuntimeVal(RuntimeType::Wave), phase(0.0), sample(0),
+    wave_expr(wave_expr), freq_expr(freq_expr), phase_expr(phase_expr), vol_expr(vol_expr), pan_expr(pan_expr) {}
+
 bool Wave::get_truth()
 {
     return true;

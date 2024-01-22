@@ -123,8 +123,6 @@ std::vector<Token> Lexer::tokenize(std::string source_)
                         tokens.push_back(Token(TokenType::Wave, result, begin_line, begin_col));
                     } else if (result == "func") {
                         tokens.push_back(Token(TokenType::Func, result, begin_line, begin_col));
-                    } else if (result == "write") {
-                        tokens.push_back(Token(TokenType::Write, result, begin_line, begin_col));
                     } else if (result == "return") {
                         tokens.push_back(Token(TokenType::Return, result, begin_line, begin_col));
                     } else {

@@ -32,6 +32,7 @@ private:
     FunctionDeclaration* get_func(std::string name);
     void create_var(std::string name, RuntimeValPtr value);
     void create_func(std::string name, FunctionDeclaration* func);
+    void new_scope();
     void exit_scope();
 
     RuntimeValPtr evaluate_stmt(Stmt* node);
@@ -52,4 +53,8 @@ private:
     RuntimeValPtr evaluate_binaryexpr(BinaryExpr* node);
     RuntimeValPtr evaluate_unaryexpr(UnaryExpr* node);
     RuntimeValPtr evaluate_listdeclaration(ListDeclaration* node);
+    RuntimeValPtr evaluate_wavedeclaration(WaveDeclaration* node);
+
+    RuntimeValPtr write_wave(std::vector<RuntimeValPtr> args);
+    std::shared_ptr<Number> get_sample_and_advance(std::shared_ptr<Wave> wave);
 };

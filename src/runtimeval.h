@@ -65,9 +65,23 @@ class Wave : public RuntimeVal
 {
 public:
     // TODO
+    Expr* wave_expr;
+    Expr* freq_expr;
+    Expr* phase_expr;
+    Expr* vol_expr;
+    Expr* pan_expr;
 
-    Wave();
-    ~Wave();
+    double phase;
+    int sample;
+
+    Wave(
+        Expr* wave_expr,
+        Expr* freq_expr,
+        Expr* phase_expr,
+        Expr* vol_expr,
+        Expr* pan_expr
+    );
+    ~Wave() {}
 
     bool get_truth();
 };

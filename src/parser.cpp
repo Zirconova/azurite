@@ -465,9 +465,23 @@ WaveDeclaration* Parser::parse_wavedeclaration()
 
     expect(TokenType::OpenParen, "Expected '('.");
 
-    // TODO
-    // MAKE SURE YOU INCREASE REFERENCE COUNT IF YOU'RE USING
-    // AN EXISITING FunctionDeclaration FOR ANY WAVE FUNCTIONS
+    skip_whitespace();
+
+    Expr* default_wave = new CallExpr(
+        new Identifier("sin", at()),
+        new Arguments({new Identifier("x", at())}, at()),
+        at()
+    );
+    Expr* default_freq = new NumericLiteral(0.0, at());
+    Expr* default_phase = new NumericLiteral(0.0, at());
+    Expr* default_vol = new NumericLiteral(1.0, at());
+    Expr* default_pan = new NumericLiteral(0.0, at());
+
+    Expr* wave_expr = default_wave;
+    Expr* freq_expr = default_freq;
+    Expr* phase_expr = default_phase;
+    Expr* vol_expr = default_vol;
+    Expr* pan_expr = default_pan;
 
     while (at().type == TokenType::Identifier) {
         std::string type = eat().value;
@@ -477,18 +491,32 @@ WaveDeclaration* Parser::parse_wavedeclaration()
         Expr* function_expr = parse_expr();
 
         if (type == "waveform") {
-            //
+            delete wave_expr;
+            wave_expr = function_expr;
         } else if (type == "freq") {
-            //
+            delete freq_expr;
+            freq_expr = function_expr;
         } else if (type == "phase") {
-            //
+            delete phase_expr;
+            phase_expr = function_expr;
         } else if (type == "vol") {
-            //
+            delete vol_expr;
+            vol_expr = function_expr;
         } else if (type == "pan") {
-            //
+            delete pan_expr;
+            pan_expr = function_expr;
         } else {
+            syntax_error("Unrecognized wave function specifier.");
+        }
 
+        if (at().type == TokenType::Comma) {
+            eat();
+            skip_whitespace();
         }
     }
+
+    expect(TokenType::CloseParen, "Expected ')'.");
+
+    return new WaveDeclaration(wave_expr, freq_expr, phase_expr, vol_expr, pan_expr, begin);
 }
 

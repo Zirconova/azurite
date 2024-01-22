@@ -1,6 +1,15 @@
 #include "runtimelib.h"
 
-std::unordered_set<std::string> Azurite::builtins = {"print", "sin"};
+std::unordered_set<std::string> Azurite::builtins = {"print", "sin", "rnd", "write"};
+
+void Azurite::initialize_runtimelib()
+{
+   srand(time(NULL)); 
+}
+
+bool Azurite::has_builtin(std::string name) {
+    return Azurite::builtins.count(name);
+}
 
 RuntimeValPtr Azurite::call_runtimelib(std::string name, std::vector<RuntimeValPtr>& args)
 {
@@ -8,6 +17,8 @@ RuntimeValPtr Azurite::call_runtimelib(std::string name, std::vector<RuntimeValP
         return Azurite::print(args);
     } else if (name == "sin") {
         return Azurite::sin(args);
+    } else if (name == "rnd") {
+	    return Azurite::rnd(args);
     }
 }
 
@@ -45,4 +56,10 @@ RuntimeValPtr Azurite::sin(std::vector<RuntimeValPtr>& args)
         std::cout << "Cannot take sin of this type.\n";
         exit(1);
     }
+}
+
+RuntimeValPtr Azurite::rnd(std::vector<RuntimeValPtr>& args)
+{
+    double random = (float)(rand()) / (float)(RAND_MAX);
+    return std::make_shared<Number>(random);
 }

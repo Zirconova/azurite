@@ -225,18 +225,18 @@ public:
 class WaveDeclaration : public Expr
 {
 public:
-    FunctionDeclaration* wave_func;
-    FunctionDeclaration* freq_func;
-    FunctionDeclaration* phase_func;
-    FunctionDeclaration* vol_func;
-    FunctionDeclaration* pan_func;
+    Expr* wave_expr;
+    Expr* freq_expr;
+    Expr* phase_expr;
+    Expr* vol_expr;
+    Expr* pan_expr;
 
     WaveDeclaration(
-        FunctionDeclaration* wave_func,
-        FunctionDeclaration* freq_func,
-        FunctionDeclaration* phase_func,
-        FunctionDeclaration* vol_func,
-        FunctionDeclaration* pan_func,
+        Expr* wave_expr,
+        Expr* freq_expr,
+        Expr* phase_expr,
+        Expr* vol_expr,
+        Expr* pan_expr,
         Token begin
     );
     ~WaveDeclaration();

@@ -1,7 +1,11 @@
 #include "interpreter.h"
 
+#define PI 3.14159265358979323846
+#define TAU 6.28318530717958647692
+
 Interpreter::Interpreter()
 {
+    Azurite::initialize_runtimelib();
     global_scope = new Environment();
     scopes.push_back(global_scope);
 }
@@ -12,7 +16,7 @@ Interpreter::~Interpreter()
 }
 
 RuntimeValPtr Interpreter::get_var(std::string name) {
-    std::cout << "Checking for var, num scopes: " << scopes.size() << std::endl;
+    //std::cout << "Checking for var, num scopes: " << scopes.size() << std::endl;
     for (std::vector<Environment*>::reverse_iterator it = scopes.rbegin(); it != scopes.rend(); it++) {
         if ((*it)->var_map.count(name)) {
             return (*it)->get_var(name);
@@ -61,12 +65,20 @@ void Interpreter::create_func(std::string name, FunctionDeclaration* func)
     scopes.back()->create_func(name, func);
 }
 
+void Interpreter::new_scope()
+{
+    //std::cout << "pushing new scope, now ";
+    Environment* scope = new Environment();
+    scopes.push_back(scope);
+    //std::cout << scopes.size() << " scopes.\n";
+}
+
 void Interpreter::exit_scope()
 {
-    std::cout << "about to exit scope from " << scopes.size() << " to ";
+    //std::cout << "about to exit scope from " << scopes.size() << " to ";
     delete scopes.back();
     scopes.pop_back();
-    std::cout << scopes.size() << std::endl;
+    //std::cout << scopes.size() << std::endl;
 }
 
 void Interpreter::interpret(std::string source)
@@ -212,10 +224,7 @@ RuntimeValPtr Interpreter::evaluate_forstmt(ForStmt* node)
     std::shared_ptr<Number> end = std::dynamic_pointer_cast<Number>(end_val);
 
     // Create and enter for loop scope
-    Environment* for_scope = new Environment();
-    std::cout << "pushing new scope, now ";
-    scopes.push_back(for_scope);
-    std::cout << scopes.size() << " scopes.\n";
+    new_scope();
 
     // Create iterator variable in for loop scope
     scopes.back()->create_var(node->iterator->name, start);
@@ -279,9 +288,12 @@ RuntimeValPtr Interpreter::evaluate_expr(Expr* node)
             return evaluate_listdeclaration((ListDeclaration*)(node));
             break;
         }
+        case NodeType::WaveDeclaration: {
+            return evaluate_wavedeclaration((WaveDeclaration*)(node));
+            break;
+        }
         default: {
-            std::cout << "Expression type not yet supported.\n";
-            exit(1);
+            runtime_error("Expression type not yet supported.", node->begin);
             break;
         }
     }
@@ -289,7 +301,15 @@ RuntimeValPtr Interpreter::evaluate_expr(Expr* node)
 
 RuntimeValPtr Interpreter::evaluate_identifier(Identifier* node)
 {
-    return get_var(node->name);
+    RuntimeValPtr value = get_var(node->name);
+
+    if (value->type == RuntimeType::Wave) {
+        std::shared_ptr<Wave> value_wave = std::dynamic_pointer_cast<Wave>(value);
+
+        return get_sample_and_advance(value_wave);
+    }
+
+    return value;
 }
 
 RuntimeValPtr Interpreter::evaluate_numericliteral(NumericLiteral* node)
@@ -306,10 +326,7 @@ RuntimeValPtr Interpreter::evaluate_callexpr(CallExpr* node)
     std::vector<RuntimeValPtr> arg_vals;
     
     // Create and enter function scope
-    Environment* func_scope = new Environment();
-    std::cout << "pushing new scope, now";
-    scopes.push_back(func_scope);
-    std::cout << scopes.size() << " scopes\n";
+    new_scope();
 
     // Initialize arguments as variables in function scope
     for (Expr* arg : args->arguments) {
@@ -317,7 +334,10 @@ RuntimeValPtr Interpreter::evaluate_callexpr(CallExpr* node)
     }
 
     // Run built-in function if it exists
-    if (Azurite::builtins.count(callee->name)) {
+    if (callee->name == "write") {
+        return_val = write_wave(arg_vals);
+    }
+    else if (Azurite::has_builtin(callee->name)) {
        return_val = Azurite::call_runtimelib(callee->name, arg_vals);
     }
     // Else look for FunctionDeclaration in environment
@@ -377,43 +397,45 @@ RuntimeValPtr Interpreter::evaluate_binaryexpr(BinaryExpr* node)
     std::string op = node->op.value;
 
     if (node->op.type == TokenType::ArithmeticOperator
-     || node->op.type == TokenType::ComparisonOperator) {
-        if (lhs_val->type == RuntimeType::Number
-            && rhs_val->type == RuntimeType::Number) {
-            std::shared_ptr<Number> lhs_num = std::dynamic_pointer_cast<Number>(lhs_val);
-            std::shared_ptr<Number> rhs_num = std::dynamic_pointer_cast<Number>(rhs_val);
-            // Arithmetic operators
-            if (op == "+") {
-                return std::make_shared<Number>(lhs_num->value + rhs_num->value);
-            } else if (op == "-") {
-                return std::make_shared<Number>(lhs_num->value - rhs_num->value);
-            } else if (op == "*") {
-                return std::make_shared<Number>(lhs_num->value * rhs_num->value);
-            } else if (op == "/") {
-                return std::make_shared<Number>(lhs_num->value / rhs_num->value);
-            } else if (op == "%") {
-                return std::make_shared<Number>(fmod(lhs_num->value, rhs_num->value));
-            } else if (op == "^") {
-                return std::make_shared<Number>(pow(lhs_num->value, rhs_num->value));
-            // Comparison operators
-            } else if (op == "==") {
-                return std::make_shared<Bool>(lhs_num->value == rhs_num->value);
-            } else if (op == "!=") {
-                return std::make_shared<Bool>(lhs_num->value != rhs_num->value);
-            } else if (op == ">") {
-                return std::make_shared<Bool>(lhs_num->value > rhs_num->value);
-            } else if (op == "<") {
-                return std::make_shared<Bool>(lhs_num->value < rhs_num->value);
-            } else if (op == ">=") {
-                return std::make_shared<Bool>(lhs_num->value >= rhs_num->value);
-            } else if (op == "<=") {
-                return std::make_shared<Bool>(lhs_num->value <= rhs_num->value);
-            }
-            // Error: unknown operator
-            runtime_error("Unknown operator.", node->op);
+        || node->op.type == TokenType::ComparisonOperator) {
+            
+        if (lhs_val->type != RuntimeType::Number
+            || rhs_val->type != RuntimeType::Number) {
+            // Error: Arithmetic or comparison expressions must use only numbers
+            runtime_error("Arithmetic or comparison expressions must use numbers only.", node->begin);
         }
-        // Error: Arithmetic or comparison expressions must use only numbers
-        runtime_error("Arithmetic or comparison expressions must use numbers only.", node->begin);
+
+        std::shared_ptr<Number> lhs_num = std::dynamic_pointer_cast<Number>(lhs_val);
+        std::shared_ptr<Number> rhs_num = std::dynamic_pointer_cast<Number>(rhs_val);
+        // Arithmetic operators
+        if (op == "+") {
+            return std::make_shared<Number>(lhs_num->value + rhs_num->value);
+        } else if (op == "-") {
+            return std::make_shared<Number>(lhs_num->value - rhs_num->value);
+        } else if (op == "*") {
+            return std::make_shared<Number>(lhs_num->value * rhs_num->value);
+        } else if (op == "/") {
+            return std::make_shared<Number>(lhs_num->value / rhs_num->value);
+        } else if (op == "%") {
+            return std::make_shared<Number>(fmod(lhs_num->value, rhs_num->value));
+        } else if (op == "^") {
+            return std::make_shared<Number>(pow(lhs_num->value, rhs_num->value));
+        // Comparison operators
+        } else if (op == "==") {
+            return std::make_shared<Bool>(lhs_num->value == rhs_num->value);
+        } else if (op == "!=") {
+            return std::make_shared<Bool>(lhs_num->value != rhs_num->value);
+        } else if (op == ">") {
+            return std::make_shared<Bool>(lhs_num->value > rhs_num->value);
+        } else if (op == "<") {
+            return std::make_shared<Bool>(lhs_num->value < rhs_num->value);
+        } else if (op == ">=") {
+            return std::make_shared<Bool>(lhs_num->value >= rhs_num->value);
+        } else if (op == "<=") {
+            return std::make_shared<Bool>(lhs_num->value <= rhs_num->value);
+        }
+        // Error: unknown operator
+        runtime_error("Unknown operator.", node->op);
 
     } else if (node->op.type == TokenType::LogicalOperator) {
         if (op == "|") {
@@ -441,18 +463,20 @@ RuntimeValPtr Interpreter::evaluate_unaryexpr(UnaryExpr* node)
         runtime_error("Unknown operator.", node->op);
 
     } else if (node->op.type == TokenType::ArithmeticOperator) {
-        if (operand_val->type == RuntimeType::Number) {
-            std::shared_ptr<Number> operand_num = std::dynamic_pointer_cast<Number>(operand_val);
-            if (op == "+") {
-                return std::make_shared<Number>(operand_num->value);
-            } else if (op == "-") {
-                return std::make_shared<Number>(-operand_num->value);
-            }
-            // Error: unknown operator
-            runtime_error("Unknown operator.", node->op);
+        if (operand_val->type != RuntimeType::Number) {
+            // Error: arithmetic unary expressions must use only numbers
+            runtime_error("Arithmetic unary expressions must use numbers only.", node->begin);
         }
-        // Error: arithmetic unary expressions must use only numbers
-        runtime_error("Arithmetic unary expressions must use numbers only.", node->begin);
+
+        std::shared_ptr<Number> operand_num = std::dynamic_pointer_cast<Number>(operand_val);
+
+        if (op == "+") {
+            return std::make_shared<Number>(operand_num->value);
+        } else if (op == "-") {
+            return std::make_shared<Number>(-operand_num->value);
+        }
+        // Error: unknown operator
+        runtime_error("Unknown operator.", node->op);
     }
 }
 
@@ -465,4 +489,87 @@ RuntimeValPtr Interpreter::evaluate_listdeclaration(ListDeclaration* node)
     }
 
     return std::make_shared<List>(elements);
+}
+
+RuntimeValPtr Interpreter::evaluate_wavedeclaration(WaveDeclaration* node)
+{
+    std::cout << "evaluating wavedeclaration\n";
+    Expr* wave_expr = node->wave_expr;
+    Expr* freq_expr = node->freq_expr;
+    Expr* phase_expr = node->phase_expr;
+    Expr* vol_expr = node->vol_expr;
+    Expr* pan_expr = node->pan_expr;
+
+    return std::make_shared<Wave>(wave_expr, freq_expr, phase_expr, vol_expr, pan_expr);
+}
+
+RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
+{
+    if (args[0]->type != RuntimeType::Wave) {
+        std::cout << "Only Wave objects can be written.\n";
+        return nullptr;
+    }
+
+    if (args.size() > 1 && args[1]->type != RuntimeType::Number) {
+        std::cout << "Length must be a number.\n";
+        return nullptr;
+    }
+
+    std::shared_ptr<Wave> wave = std::dynamic_pointer_cast<Wave>(args[0]);
+    std::shared_ptr<Number> length = std::dynamic_pointer_cast<Number>(args[1]);
+
+    // Write each sample to buffer
+    for (int i = 0; i < length->value; i++) {
+        // TODO: Put this in buffer
+        std::cout << get_sample_and_advance(wave)->value << std::endl;
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<Number> Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
+{
+    // Create and enter new scope
+    new_scope();
+
+    // Evaluate height of wave with // TODO add panning
+    // height = waveform(phase + phaseoffset) * vol
+    scopes.back()->create_var("x", std::make_shared<Number>(wave->sample));
+    RuntimeValPtr freq = evaluate_expr(wave->freq_expr);
+    RuntimeValPtr phase_offset = evaluate_expr(wave->phase_expr);
+    RuntimeValPtr vol = evaluate_expr(wave->vol_expr);
+
+    if (freq->type != RuntimeType::Number
+        || phase_offset->type != RuntimeType::Number
+        || vol->type != RuntimeType::Number) {
+        
+        std::cout << "All wave functions must evaluate to numbers.\n";
+        return nullptr;
+    }
+
+    std::shared_ptr<Number> freq_num = std::dynamic_pointer_cast<Number>(freq);
+    std::shared_ptr<Number> phase_offset_num = std::dynamic_pointer_cast<Number>(phase_offset);
+    std::shared_ptr<Number> vol_num = std::dynamic_pointer_cast<Number>(vol);
+
+    scopes.back()->create_var("x", std::make_shared<Number>(wave->phase + phase_offset_num->value));
+    RuntimeValPtr height = evaluate_expr(wave->wave_expr);
+
+    if (height->type != RuntimeType::Number) {
+        std::cout << "All wave functions must evaluate to numbers.\n";
+        return nullptr;
+    }
+
+    std::shared_ptr<Number> height_num = std::dynamic_pointer_cast<Number>(height);
+
+    std::shared_ptr<Number> final_height = std::make_shared<Number>(height_num->value * vol_num->value);
+
+    // Advance
+    wave->sample++;
+
+    // phase += 2pi*(freq at sample)/samplerate
+    wave->phase += TAU * (freq_num->value) / 44100;
+
+    exit_scope();
+
+    return final_height;
 }

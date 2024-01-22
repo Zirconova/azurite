@@ -25,7 +25,6 @@ enum class TokenType
     If,
     Func,
     Wave,
-    Write,
     Return
 };
 

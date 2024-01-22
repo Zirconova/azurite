@@ -129,23 +129,23 @@ ListDeclaration::~ListDeclaration()
 }
 
 WaveDeclaration::WaveDeclaration(
-        FunctionDeclaration* wave_func,
-        FunctionDeclaration* freq_func,
-        FunctionDeclaration* phase_func,
-        FunctionDeclaration* vol_func,
-        FunctionDeclaration* pan_func,
+        Expr* wave_expr,
+        Expr* freq_expr,
+        Expr* phase_expr,
+        Expr* vol_expr,
+        Expr* pan_expr,
         Token begin
         )
     : Expr(NodeType::WaveDeclaration, begin),
-    wave_func(wave_func), freq_func(freq_func), phase_func(phase_func), vol_func(vol_func), pan_func(pan_func) {}
+    wave_expr(wave_expr), freq_expr(freq_expr), phase_expr(phase_expr), vol_expr(vol_expr), pan_expr(pan_expr) {}
 WaveDeclaration::~WaveDeclaration()
 {
-    // Decrease each reference count and delete function if it reaches 0
-    if (--wave_func->ref_count == 0) { delete wave_func; }
-    if (--freq_func->ref_count == 0) { delete freq_func; }
-    if (--phase_func->ref_count == 0) { delete phase_func; }
-    if (--vol_func->ref_count == 0) { delete vol_func; }
-    if (--pan_func->ref_count == 0) { delete pan_func; }
+    // NOPE -Decrease each reference count and delete function if it reaches 0 NOPE
+    delete wave_expr;
+    delete freq_expr;
+    delete phase_expr;
+    delete vol_expr;
+    delete pan_expr;
 }
 
 
