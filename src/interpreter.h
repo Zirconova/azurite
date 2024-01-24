@@ -10,6 +10,7 @@
 #include "environment.h"
 #include "runtimelib.h"
 #include "error.h"
+#include "wavewriter.h"
 
 typedef std::shared_ptr<RuntimeVal> RuntimeValPtr;
 
@@ -27,6 +28,8 @@ private:
     Program* program;
     Environment* global_scope;
     std::vector<Environment*> scopes;
+
+    short* wave_buffer;
 
     RuntimeValPtr get_var(std::string name);
     FunctionDeclaration* get_func(std::string name);

@@ -7,12 +7,14 @@ Interpreter::Interpreter()
 {
     Azurite::initialize_runtimelib();
     global_scope = new Environment();
+    wave_buffer = new short[1000000];
     scopes.push_back(global_scope);
 }
 
 Interpreter::~Interpreter()
 {
     delete global_scope;
+    delete [] wave_buffer;
 }
 
 RuntimeValPtr Interpreter::get_var(std::string name) {
@@ -89,6 +91,8 @@ void Interpreter::interpret(std::string source)
 
     std::cout << "=======================\nbouta interpret\n";
     evaluate_stmt(program->body);
+
+    write_wave_file("test.wav", wave_buffer, 1000000, 1);
 }
 
 RuntimeValPtr Interpreter::evaluate_stmt(Stmt* node)
@@ -521,7 +525,9 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
     // Write each sample to buffer
     for (int i = 0; i < length->value; i++) {
         // TODO: Put this in buffer
-        std::cout << get_sample_and_advance(wave)->value << std::endl;
+        double sample = get_sample_and_advance(wave)->value;
+        std::cout << sample << std::endl;
+        wave_buffer[i] = sample * 32768;
     }
 
     return nullptr;
