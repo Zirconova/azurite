@@ -5,6 +5,7 @@
 enum class TokenType
 {
     Identifier,
+    String,
     Number,
     ArithmeticOperator,
     ComparisonOperator,

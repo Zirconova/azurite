@@ -262,6 +262,10 @@ RuntimeValPtr Interpreter::evaluate_expr(Expr* node)
             return evaluate_numericliteral((NumericLiteral*)(node));
             break;
         }
+        case NodeType::StringLiteral: {
+            return evaluate_stringliteral((StringLiteral*)(node));
+            break;
+        }
         case NodeType::Identifier: {
             return evaluate_identifier((Identifier*)(node));
             break;
@@ -314,6 +318,11 @@ RuntimeValPtr Interpreter::evaluate_identifier(Identifier* node)
     }
 
     return value;
+}
+
+RuntimeValPtr Interpreter::evaluate_stringliteral(StringLiteral* node)
+{
+    return std::make_shared<String>(node->value);
 }
 
 RuntimeValPtr Interpreter::evaluate_numericliteral(NumericLiteral* node)

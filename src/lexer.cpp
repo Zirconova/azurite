@@ -85,12 +85,31 @@ std::vector<Token> Lexer::tokenize(std::string source_)
             case ':':
                 tokens.push_back(Token(TokenType::Colon, {eat()}, line, col));
                 break;
+            case '\"': {
+                // Eat beginning quote
+                eat();
+                std::cout << "stringing\n";
+                std::string result = "";
+                int begin_line = line;
+                int begin_col = col;
+                while (ptr < source.length() && at() != '"') {
+                    result += eat();
+                }
+                if (ptr == source.length()) {
+                    std::cout << "Expected ending quote.\n";
+                    exit(1);
+                }
+                // Eat ending quote
+                eat();
+                tokens.push_back(Token(TokenType::String, result, begin_line, begin_col));
+                break;
+            }
             case '\n':
                 tokens.push_back(Token(TokenType::Endline, {eat()}, line, col));
                 line++;
                 col = 1;
                 break;
-            default:
+            default: {
                 std::string result = "";
                 int begin_line = line;
                 int begin_col = col;
@@ -133,6 +152,7 @@ std::vector<Token> Lexer::tokenize(std::string source_)
                 }
 
                 break;
+            }
         }
     }
 

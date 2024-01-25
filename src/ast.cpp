@@ -100,6 +100,9 @@ UnaryExpr::~UnaryExpr()
 NumericLiteral::NumericLiteral(double value, Token begin)
     : Expr(NodeType::NumericLiteral, begin), value(value) {}
 
+StringLiteral::StringLiteral(std::string value, Token begin)
+    : Expr(NodeType::StringLiteral, begin), value(value) {}
+
 Identifier::Identifier(std::string name, Token begin)
     : Expr(NodeType::Identifier, begin), name(name) {}
 
@@ -209,6 +212,15 @@ void printAST(Stmt* node, int indent, bool in_list)
 
             printIndent(indent);
             std::cout << "name: " << "\"" << dnode->name << "\"\n";
+
+            break;
+        }
+        case NodeType::StringLiteral: {
+            StringLiteral* dnode = (StringLiteral*)(node);
+            std::cout << "StringLiteral\n";
+
+            printIndent(indent);
+            std::cout << "value: " << dnode->value << "\n";
 
             break;
         }

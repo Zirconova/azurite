@@ -10,6 +10,7 @@ enum class NodeType
 {
     // Expression
     NumericLiteral,
+    StringLiteral,
     Identifier,
     UnaryExpr,
     BinaryExpr,
@@ -99,6 +100,16 @@ public:
 
     NumericLiteral(double value, Token begin);
     ~NumericLiteral() {}
+};
+
+
+class StringLiteral : public Expr
+{
+public:
+    std::string value;
+
+    StringLiteral(std::string value, Token begin);
+    ~StringLiteral() {}
 };
 
 

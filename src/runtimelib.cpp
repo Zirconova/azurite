@@ -26,6 +26,11 @@ RuntimeValPtr Azurite::print(std::vector<RuntimeValPtr>& args)
 {
     for (RuntimeValPtr arg : args) {
         switch(arg->type) {
+            case RuntimeType::String: {
+                std::shared_ptr<String> arg_str = std::dynamic_pointer_cast<String>(arg);
+                std::cout << arg_str->value << " ";
+                break;
+            }
             case RuntimeType::Number: {
                 std::shared_ptr<Number> arg_num = std::dynamic_pointer_cast<Number>(arg);
                 std::cout << arg_num->value << " ";

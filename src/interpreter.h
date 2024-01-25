@@ -47,6 +47,7 @@ private:
     RuntimeValPtr evaluate_returnstmt(ReturnStmt* node);
     RuntimeValPtr evaluate_expr(Expr* node);
     RuntimeValPtr evaluate_identifier(Identifier* node);
+    RuntimeValPtr evaluate_stringliteral(StringLiteral* node);
     RuntimeValPtr evaluate_numericliteral(NumericLiteral* node);
     RuntimeValPtr evaluate_callexpr(CallExpr* node);
     // double pointer because in assignexpr you may reassign

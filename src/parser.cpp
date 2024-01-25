@@ -380,6 +380,9 @@ Expr* Parser::parse_primaryexpr()
     if (at().type == TokenType::Number) {
         return new NumericLiteral(std::stod(eat().value), begin);
 
+    } else if (at().type == TokenType::String) {
+        return new StringLiteral(eat().value, begin);
+        
     } else if (at().type == TokenType::Identifier) {
         if (peek().type == TokenType::OpenParen) {
             return parse_callexpr();

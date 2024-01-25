@@ -8,6 +8,7 @@
 enum class RuntimeType
 {
     Number,
+    String,
     Bool,
     List,
     Wave
@@ -32,6 +33,18 @@ public:
 
     Number(double value);
     ~Number() {}
+
+    bool get_truth();
+};
+
+
+class String : public RuntimeVal
+{
+public:
+    std::string value;
+
+    String(std::string value);
+    ~String() {}
 
     bool get_truth();
 };

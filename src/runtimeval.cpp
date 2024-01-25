@@ -12,6 +12,13 @@ bool Number::get_truth()
     return (bool)value;
 }
 
+String::String(std::string value)
+    : RuntimeVal(RuntimeType::String), value(value) {}
+bool String::get_truth()
+{
+    return value != "";
+}
+
 Bool::Bool(bool value)
     : RuntimeVal(RuntimeType::Bool), value(value) {}
 bool Bool::get_truth()
