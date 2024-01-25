@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <memory>
+#include <unordered_map>
 
 #include "ast.h"
 #include "parser.h"
@@ -29,7 +30,7 @@ private:
     Environment* global_scope;
     std::vector<Environment*> scopes;
 
-    short* wave_buffer;
+    std::unordered_map<std::string, WaveBuffer*> wave_buffers;
 
     RuntimeValPtr get_var(std::string name);
     FunctionDeclaration* get_func(std::string name);

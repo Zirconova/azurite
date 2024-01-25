@@ -7,14 +7,16 @@ Interpreter::Interpreter()
 {
     Azurite::initialize_runtimelib();
     global_scope = new Environment();
-    wave_buffer = new short[1000000];
     scopes.push_back(global_scope);
 }
 
 Interpreter::~Interpreter()
 {
     delete global_scope;
-    delete [] wave_buffer;
+    for (std::unordered_map<std::string, WaveBuffer*>::iterator it = wave_buffers.begin();
+            it != wave_buffers.end(); it++) {
+        delete it->second;
+    }
 }
 
 RuntimeValPtr Interpreter::get_var(std::string name) {
@@ -92,68 +94,71 @@ void Interpreter::interpret(std::string source)
     std::cout << "=======================\nbouta interpret\n";
     evaluate_stmt(program->body);
 
-    write_wave_file("test.wav", wave_buffer, 1000000, 1);
+    for (std::unordered_map<std::string, WaveBuffer*>::iterator it = wave_buffers.begin();
+            it != wave_buffers.end(); it++) {
+        write_wave_file(it->first, it->second, 1);
+    }
 }
 
 RuntimeValPtr Interpreter::evaluate_stmt(Stmt* node)
 {
     RuntimeValPtr return_val = nullptr;
 
-    std::cout << "in evaluate_stmt\n";
+    //std::cout << "in evaluate_stmt\n";
 
     switch (node->type) {
         case NodeType::Stmts: {
-            std::cout << "bouta evaluate Stmts\n";
+            //std::cout << "bouta evaluate Stmts\n";
             return_val = evaluate_stmts((Stmts*)(node));
             break;
         }
         case NodeType::AssignStmt: {
-            std::cout << "bouta interpret AssignStmt\n";
+            //std::cout << "bouta interpret AssignStmt\n";
             interpret_assignstmt((AssignStmt*)(node));
             break;
         }
         case NodeType::IfStmt: {
-            std::cout << "bouta evaluate IfStmt\n";
+            //std::cout << "bouta evaluate IfStmt\n";
             return_val = evaluate_ifstmt((IfStmt*)(node));
             break;
         }
         case NodeType::ForStmt: {
-            std::cout << "bouta evaluate ForStmt\n";
+            //std::cout << "bouta evaluate ForStmt\n";
             return_val = evaluate_forstmt((ForStmt*)(node));
             break;
         }
         case NodeType::FunctionDeclaration: {
-            std::cout << "bouta interpret FunctionDeclaration\n";
+            //std::cout << "bouta interpret FunctionDeclaration\n";
             interpret_functiondeclaration((FunctionDeclaration*)(node));
             break;
         }
         case NodeType::ReturnStmt: {
-            std::cout << "bouta evaluate ReturnStmt\n";
+            //std::cout << "bouta evaluate ReturnStmt\n";
             return_val = evaluate_returnstmt((ReturnStmt*)(node));
             break;
         }
         case NodeType::CallExpr: {
-            std::cout << "bouta evaluate CallExpr\n";
+            //std::cout << "bouta evaluate CallExpr\n";
             evaluate_callexpr((CallExpr*)(node));
             break;
         }
         case NodeType::BinaryExpr: {
-            std::cout << "bouta evaluate BinaryExpr\n";
+            //std::cout << "bouta evaluate BinaryExpr\n";
             evaluate_binaryexpr((BinaryExpr*)(node));
             break;
         }
         case NodeType::UnaryExpr: {
-            std::cout << "bouta evaluate UnaryExpr\n";
+            //std::cout << "bouta evaluate UnaryExpr\n";
             evaluate_unaryexpr((UnaryExpr*)(node));
             break;
         }
         case NodeType::MemberExpr: {
-            std::cout << "bouta evaluate MemberExpr\n";
+            //std::cout << "bouta evaluate MemberExpr\n";
             evaluate_memberexpr((MemberExpr*)(node));
             break;
         }
         case NodeType::ListDeclaration: {
-            std::cout << "bouta evaluate ListDeclaration\n";
+            //std::cout << "bouta evaluate ListDeclaration\n";
             evaluate_listdeclaration((ListDeclaration*)(node));
             break;
         }
@@ -518,25 +523,50 @@ RuntimeValPtr Interpreter::evaluate_wavedeclaration(WaveDeclaration* node)
 
 RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
 {
+    if (args.size() < 3) {
+        std::cout << "write(wave, length, filename) takes 3 arguments.\n";
+        return nullptr;
+    }
+
     if (args[0]->type != RuntimeType::Wave) {
         std::cout << "Only Wave objects can be written.\n";
         return nullptr;
     }
 
-    if (args.size() > 1 && args[1]->type != RuntimeType::Number) {
+    if (args[1]->type != RuntimeType::Number) {
         std::cout << "Length must be a number.\n";
+        return nullptr;
+    }
+
+    if (args[2]->type != RuntimeType::String) {
+        std::cout << "Filename must be a string.\n";
         return nullptr;
     }
 
     std::shared_ptr<Wave> wave = std::dynamic_pointer_cast<Wave>(args[0]);
     std::shared_ptr<Number> length = std::dynamic_pointer_cast<Number>(args[1]);
+    std::shared_ptr<String> filename = std::dynamic_pointer_cast<String>(args[2]);
+
+    if (!wave_buffers.count(filename->value)) {
+        wave_buffers[filename->value] = new WaveBuffer();
+    }
+
+    WaveBuffer* buffer = wave_buffers[filename->value];
+
+    if (length->value > buffer->length) {
+        buffer->length = length->value;
+    }
 
     // Write each sample to buffer
     for (int i = 0; i < length->value; i++) {
         // TODO: Put this in buffer
-        double sample = get_sample_and_advance(wave)->value;
+        std::shared_ptr<Number> sample = get_sample_and_advance(wave);
+
+        if (!sample) {
+            return nullptr;
+        }
         //std::cout << sample << std::endl;
-        wave_buffer[i] += (short)(sample * 32768);
+        buffer->data[i] += (short)(sample->value * 32768);
     }
 
     std::cout << "written wave.\n";

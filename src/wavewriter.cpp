@@ -1,5 +1,15 @@
 #include "wavewriter.h"
 
+WaveBuffer::WaveBuffer() : length(0)
+{
+    data = new short[1000000];
+}
+WaveBuffer::~WaveBuffer()
+{
+    std::cout << "WaveBuffer destructor called!\n";
+    delete [] data;
+}
+
 struct wave16Header {
     char riff[4] = {'R', 'I', 'F', 'F'};
     int size;  // Overall size (data bytes + 44)
@@ -23,14 +33,14 @@ struct wave16Header {
         data_size(length * 2 * num_channels) {}
 };
 
-void write_wave_file(std::string filename, short* data, int length, int num_channels)
+void write_wave_file(std::string filename, WaveBuffer* buffer, int num_channels)
 {
     std::ofstream file(filename, std::ios::out | std::ios::binary);
 
-    wave16Header header(length, num_channels);
+    wave16Header header(buffer->length, num_channels);
 
     file.write((const char*)&header, 44);
-    file.write((const char*)data, length);
+    file.write((const char*)(buffer->data), header.data_size);
 
     file.close();
 }

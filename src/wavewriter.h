@@ -1,4 +1,14 @@
 #include <iostream>
 #include <fstream>
 
-void write_wave_file(std::string filename, short* data, int length, int num_channels);
+class WaveBuffer
+{
+public:
+    int length;
+    short* data;
+
+    WaveBuffer();
+    ~WaveBuffer();
+};
+
+void write_wave_file(std::string filename, WaveBuffer* buffer, int num_channels);
