@@ -469,7 +469,7 @@ WaveDeclaration* Parser::parse_wavedeclaration()
 
     Expr* default_wave = new CallExpr(
         new Identifier("sin", at()),
-        new Arguments({new Identifier("x", at())}, at()),
+        new Arguments({new Identifier("x", at())/*new NumericLiteral(0, at())*/}, at()),
         at()
     );
     Expr* default_freq = new NumericLiteral(0.0, at());

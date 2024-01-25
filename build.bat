@@ -1,1 +1,1 @@
-g++ -o .\bin\az.exe .\src\*.cpp
+g++ -O .\src\*.cpp -o .\bin\az.exe

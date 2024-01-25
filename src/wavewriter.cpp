@@ -30,7 +30,7 @@ void write_wave_file(std::string filename, short* data, int length, int num_chan
     wave16Header header(length, num_channels);
 
     file.write((const char*)&header, 44);
-    file.write((const char*)&data, length);
+    file.write((const char*)data, length);
 
     file.close();
 }

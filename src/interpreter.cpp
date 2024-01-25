@@ -526,9 +526,11 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
     for (int i = 0; i < length->value; i++) {
         // TODO: Put this in buffer
         double sample = get_sample_and_advance(wave)->value;
-        std::cout << sample << std::endl;
-        wave_buffer[i] = sample * 32768;
+        //std::cout << sample << std::endl;
+        wave_buffer[i] += (short)(sample * 32768);
     }
+
+    std::cout << "written wave.\n";
 
     return nullptr;
 }
