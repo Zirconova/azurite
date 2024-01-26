@@ -86,6 +86,7 @@ public:
 
     double phase;
     int sample;
+    static int global_sample;
 
     Wave(
         Expr* wave_expr,

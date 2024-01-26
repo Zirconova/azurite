@@ -1,6 +1,6 @@
 #include "runtimelib.h"
 
-std::unordered_set<std::string> Azurite::builtins = {"print", "sin", "rnd", "write"};
+std::unordered_set<std::string> Azurite::builtins = {"print", "sin", "floor", "rnd"};
 
 void Azurite::initialize_runtimelib()
 {
@@ -17,8 +17,10 @@ RuntimeValPtr Azurite::call_runtimelib(std::string name, std::vector<RuntimeValP
         return Azurite::print(args);
     } else if (name == "sin") {
         return Azurite::sin(args);
+    } else if (name == "floor") {
+        return Azurite::floor(args);
     } else if (name == "rnd") {
-	    return Azurite::rnd(args);
+        return Azurite::rnd(args);
     }
 }
 
@@ -54,13 +56,24 @@ RuntimeValPtr Azurite::print(std::vector<RuntimeValPtr>& args)
 
 RuntimeValPtr Azurite::sin(std::vector<RuntimeValPtr>& args)
 {
-    if (args[0]->type == RuntimeType::Number) {
-        std::shared_ptr<Number> arg_num = std::dynamic_pointer_cast<Number>(args[0]);
-        return std::make_shared<Number>(std::sin(arg_num->value));
-    } else {
+    if (args[0]->type != RuntimeType::Number) {
         std::cout << "Cannot take sin of this type.\n";
         exit(1);
     }
+
+    std::shared_ptr<Number> arg_num = std::dynamic_pointer_cast<Number>(args[0]);
+    return std::make_shared<Number>(std::sin(arg_num->value));
+}
+
+RuntimeValPtr Azurite::floor(std::vector<RuntimeValPtr>& args)
+{
+    if (args[0]->type != RuntimeType::Number) {
+        std::cout << "Cannot take floor of this type.\n";
+        exit(1);
+    }
+    
+    std::shared_ptr<Number> arg_num = std::dynamic_pointer_cast<Number>(args[0]);
+    return std::make_shared<Number>(std::floor(arg_num->value));
 }
 
 RuntimeValPtr Azurite::rnd(std::vector<RuntimeValPtr>& args)

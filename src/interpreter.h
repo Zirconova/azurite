@@ -61,5 +61,5 @@ private:
     RuntimeValPtr evaluate_wavedeclaration(WaveDeclaration* node);
 
     RuntimeValPtr write_wave(std::vector<RuntimeValPtr> args);
-    std::shared_ptr<Number> get_sample_and_advance(std::shared_ptr<Wave> wave);
+    double get_sample_and_advance(std::shared_ptr<Wave> wave);
 };

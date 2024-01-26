@@ -39,6 +39,8 @@ bool List::get_truth()
     return !elements.empty();
 }
 
+int Wave::global_sample = 0;
+
 Wave::Wave(
         Expr* wave_expr,
         Expr* freq_expr,

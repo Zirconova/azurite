@@ -319,7 +319,7 @@ RuntimeValPtr Interpreter::evaluate_identifier(Identifier* node)
     if (value->type == RuntimeType::Wave) {
         std::shared_ptr<Wave> value_wave = std::dynamic_pointer_cast<Wave>(value);
 
-        return get_sample_and_advance(value_wave);
+        return std::make_shared<Number>(get_sample_and_advance(value_wave));
     }
 
     return value;
@@ -559,14 +559,11 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
 
     // Write each sample to buffer
     for (int i = 0; i < length->value; i++) {
-        // TODO: Put this in buffer
-        std::shared_ptr<Number> sample = get_sample_and_advance(wave);
+        Wave::global_sample = i;
 
-        if (!sample) {
-            return nullptr;
-        }
-        //std::cout << sample << std::endl;
-        buffer->data[i] += (short)(sample->value * 32768);
+        double sample = get_sample_and_advance(wave);
+
+        buffer->data[i] += (short)(sample * 32768);
     }
 
     std::cout << "written wave.\n";
@@ -574,14 +571,19 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
     return nullptr;
 }
 
-std::shared_ptr<Number> Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
+double Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
 {
     // Create and enter new scope
     new_scope();
 
+    if (Wave::global_sample == 0) {
+        wave->sample = 0;
+        wave->phase = 0;
+    }
+
     // Evaluate height of wave with // TODO add panning
     // height = waveform(phase + phaseoffset) * vol
-    scopes.back()->create_var("x", std::make_shared<Number>(wave->sample));
+    scopes.back()->create_var("x", std::make_shared<Number>(Wave::global_sample));
     RuntimeValPtr freq = evaluate_expr(wave->freq_expr);
     RuntimeValPtr phase_offset = evaluate_expr(wave->phase_expr);
     RuntimeValPtr vol = evaluate_expr(wave->vol_expr);
@@ -591,30 +593,32 @@ std::shared_ptr<Number> Interpreter::get_sample_and_advance(std::shared_ptr<Wave
         || vol->type != RuntimeType::Number) {
         
         std::cout << "All wave functions must evaluate to numbers.\n";
-        return nullptr;
+        return 0;
     }
 
-    std::shared_ptr<Number> freq_num = std::dynamic_pointer_cast<Number>(freq);
-    std::shared_ptr<Number> phase_offset_num = std::dynamic_pointer_cast<Number>(phase_offset);
-    std::shared_ptr<Number> vol_num = std::dynamic_pointer_cast<Number>(vol);
+    double freq_num = std::dynamic_pointer_cast<Number>(freq)->value;
+    double phase_offset_num = std::dynamic_pointer_cast<Number>(phase_offset)->value;
+    double vol_num = std::dynamic_pointer_cast<Number>(vol)->value;
 
-    scopes.back()->create_var("x", std::make_shared<Number>(wave->phase + phase_offset_num->value));
+    scopes.back()->create_var("x", std::make_shared<Number>(wave->phase + phase_offset_num));
     RuntimeValPtr height = evaluate_expr(wave->wave_expr);
 
     if (height->type != RuntimeType::Number) {
         std::cout << "All wave functions must evaluate to numbers.\n";
-        return nullptr;
+        return 0;
     }
 
-    std::shared_ptr<Number> height_num = std::dynamic_pointer_cast<Number>(height);
+    double height_num = std::dynamic_pointer_cast<Number>(height)->value;
 
-    std::shared_ptr<Number> final_height = std::make_shared<Number>(height_num->value * vol_num->value);
+    double final_height = height_num * vol_num;
 
-    // Advance
-    wave->sample++;
+    // Advance if sample is new
+    if (Wave::global_sample >= wave->sample) {
+        wave->sample++;
 
-    // phase += 2pi*(freq at sample)/samplerate
-    wave->phase += TAU * (freq_num->value) / 44100;
+        // phase += 2pi*(freq at sample)/samplerate
+        wave->phase += TAU * (freq_num) / 44100;
+    }
 
     exit_scope();
 
