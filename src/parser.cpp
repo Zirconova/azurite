@@ -246,6 +246,8 @@ Arguments* Parser::parse_arguments()
 
     expect(TokenType::OpenParen, "Expected '('.");
 
+    skip_whitespace();
+
     if (at().type != TokenType::CloseParen) {
         bool start = true;
         do {
@@ -255,12 +257,18 @@ Arguments* Parser::parse_arguments()
             }
             start = false;
 
+            skip_whitespace();
+
             Expr* arg = parse_expr();
 
             arguments.push_back(arg);
 
+            skip_whitespace();
+
         } while (at().type == TokenType::Comma);
     }
+
+    skip_whitespace();
 
     expect(TokenType::CloseParen, "Expected ')'.");
 

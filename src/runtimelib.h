@@ -22,5 +22,6 @@ namespace Azurite {
     RuntimeValPtr print(std::vector<RuntimeValPtr>& args);
     RuntimeValPtr sin(std::vector<RuntimeValPtr>& args);
     RuntimeValPtr floor(std::vector<RuntimeValPtr>& args);
+    RuntimeValPtr abs(std::vector<RuntimeValPtr>& args);
     RuntimeValPtr rnd(std::vector<RuntimeValPtr>& args);
 }
