@@ -102,7 +102,7 @@ public:
         Expr* vol_expr,
         Expr* pan_expr
     );
-    ~Wave() {}
+    ~Wave();
 
     bool get_truth();
 };

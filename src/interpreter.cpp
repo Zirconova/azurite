@@ -650,8 +650,6 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
         buffer->length = length->value;
     }
 
-    simplify_wave(wave);
-
     // Write each sample to buffer
     for (int i = 0; i < length->value; i++) {
         Wave::global_sample = i;
@@ -663,14 +661,17 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
 
     std::cout << "----written wave----\n";
 
-    desimplify_wave(wave);
-
     return nullptr;
 }
 
 double Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
 {
     if (Wave::global_sample == 0) {
+        // Delete old fast exprs before making new ones
+        if (wave->fast_wave_expr != nullptr) {
+            desimplify_wave(wave);
+        }
+        
         wave->sample = 0;
         wave->phase = 0;
     }
@@ -678,7 +679,6 @@ double Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
     wave->x = Wave::global_sample;
 
     if (wave->fast_wave_expr == nullptr) {
-        // TODO: call desimplify_wave(wave) at some point to get rid of this memory
         simplify_wave(wave);
     }
 

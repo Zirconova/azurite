@@ -57,6 +57,22 @@ Wave::Wave(
     fast_vol_expr = nullptr;
     fast_pan_expr = nullptr;
 }
+Wave::~Wave()
+{
+    if (fast_wave_expr != nullptr) {
+        delete fast_wave_expr;
+        delete fast_freq_expr;
+        delete fast_phase_expr;
+        delete fast_vol_expr;
+        delete fast_pan_expr;
+
+        fast_wave_expr = nullptr;
+        fast_freq_expr = nullptr;
+        fast_phase_expr = nullptr;
+        fast_vol_expr = nullptr;
+        fast_pan_expr = nullptr;
+    }
+}
 
 bool Wave::get_truth()
 {
