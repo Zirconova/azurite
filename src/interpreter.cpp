@@ -275,6 +275,16 @@ RuntimeValPtr Interpreter::evaluate_expr(Expr* node)
             return evaluate_identifier((Identifier*)(node));
             break;
         }
+        case NodeType::RuntimeValPointerNode: {
+            //std::cout << "evaluating RVPNode\n";
+            return evaluate_runtimevalpointernode((RuntimeValPointerNode*)(node));
+            break;
+        }
+        case NodeType::NumberPointerNode: {
+            //std::cout << "evaluating NPNode\n";
+            return evaluate_numberpointernode((NumberPointerNode*)(node));
+            break;
+        }
         case NodeType::CallExpr: {
             RuntimeValPtr return_val = evaluate_callexpr((CallExpr*)(node));
 
@@ -316,13 +326,30 @@ RuntimeValPtr Interpreter::evaluate_identifier(Identifier* node)
 {
     RuntimeValPtr value = get_var(node->name);
 
-    if (value->type == RuntimeType::Wave) {
-        std::shared_ptr<Wave> value_wave = std::dynamic_pointer_cast<Wave>(value);
+    // I think after moving this to runtimevalpointernode (only invoked in wave expressions)
+    // you won't need this check anymore PLUS now you can use waves in other expressions
+    // as actual waves instead of them returning a number :DDDD
+    // if (value->type == RuntimeType::Wave) {
+    //     std::shared_ptr<Wave> value_wave = std::dynamic_pointer_cast<Wave>(value);
 
-        return std::make_shared<Number>(get_sample_and_advance(value_wave));
-    }
+    //     return std::make_shared<Number>(get_sample_and_advance(value_wave));
+    // }
 
     return value;
+}
+
+RuntimeValPtr Interpreter::evaluate_runtimevalpointernode(RuntimeValPointerNode* node)
+{
+    if (node->value->type == RuntimeType::Wave) {
+        std::shared_ptr<Wave> value_wave = std::dynamic_pointer_cast<Wave>(node->value);
+        return std::make_shared<Number>(get_sample_and_advance(value_wave));
+    }
+    return node->value;
+}
+
+RuntimeValPtr Interpreter::evaluate_numberpointernode(NumberPointerNode* node)
+{
+    return std::make_shared<Number>(*(node->value));
 }
 
 RuntimeValPtr Interpreter::evaluate_stringliteral(StringLiteral* node)
@@ -521,6 +548,72 @@ RuntimeValPtr Interpreter::evaluate_wavedeclaration(WaveDeclaration* node)
     return std::make_shared<Wave>(wave_expr, freq_expr, phase_expr, vol_expr, pan_expr);
 }
 
+void Interpreter::simplify_wave(std::shared_ptr<Wave> wave)
+{
+    wave->fast_wave_expr = simplify_expr(wave->wave_expr, wave);
+    wave->fast_freq_expr = simplify_expr(wave->freq_expr, wave);
+    wave->fast_phase_expr = simplify_expr(wave->phase_expr, wave);
+    wave->fast_vol_expr = simplify_expr(wave->vol_expr, wave);
+    wave->fast_pan_expr = simplify_expr(wave->pan_expr, wave);
+}
+
+void Interpreter::desimplify_wave(std::shared_ptr<Wave> wave)
+{
+    delete wave->fast_wave_expr;
+    delete wave->fast_freq_expr;
+    delete wave->fast_phase_expr;
+    delete wave->fast_vol_expr;
+    delete wave->fast_pan_expr;
+
+    wave->fast_wave_expr = nullptr;
+    wave->fast_freq_expr = nullptr;
+    wave->fast_phase_expr = nullptr;
+    wave->fast_vol_expr = nullptr;
+    wave->fast_pan_expr = nullptr;
+}
+
+Expr* Interpreter::simplify_expr(Expr* node, std::shared_ptr<Wave> wave)
+{
+    switch(node->type) {
+        case NodeType::Identifier: {
+            Identifier* dnode = (Identifier*)node;
+            if (dnode->name == "x") {
+                return new NumberPointerNode(&(wave->x), dnode->begin);
+            }
+            return new RuntimeValPointerNode(evaluate_identifier(dnode), dnode->begin);
+        }
+        case NodeType::NumericLiteral: {
+            NumericLiteral* dnode = (NumericLiteral*)node;
+            return new NumericLiteral(dnode->value, dnode->begin);
+        }
+        case NodeType::MemberExpr: {
+            MemberExpr* dnode = (MemberExpr*)node;
+            RuntimeValPtr* num_ = evaluate_memberexpr(dnode);
+            std::shared_ptr<Number> num = std::dynamic_pointer_cast<Number>(*num_);
+            return new NumericLiteral(num->value, dnode->begin);
+        }
+        case NodeType::CallExpr: {
+            CallExpr* dnode = (CallExpr*)node;
+            std::vector<Expr*> arg_vector;
+            for (Expr* arg : dnode->arguments->arguments) {
+                arg_vector.push_back(simplify_expr(arg, wave));
+            }
+            Arguments* args = new Arguments(arg_vector, dnode->begin);
+            return new CallExpr(new Identifier(dnode->callee->name, dnode->begin), args, dnode->begin);
+        }
+        case NodeType::BinaryExpr: {
+            BinaryExpr* dnode = (BinaryExpr*)node;
+            return new BinaryExpr(simplify_expr(dnode->lhs, wave), simplify_expr(dnode->rhs, wave), dnode->op, dnode->begin);
+        }
+        case NodeType::UnaryExpr: {
+            UnaryExpr* dnode = (UnaryExpr*)node;
+            return new UnaryExpr(simplify_expr(dnode->operand, wave), dnode->op, dnode->begin);
+        }
+        default:
+            return new NumericLiteral(0.0, node->begin);
+    }
+}
+
 RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
 {
     if (args.size() < 3) {
@@ -557,6 +650,8 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
         buffer->length = length->value;
     }
 
+    simplify_wave(wave);
+
     // Write each sample to buffer
     for (int i = 0; i < length->value; i++) {
         Wave::global_sample = i;
@@ -566,27 +661,32 @@ RuntimeValPtr Interpreter::write_wave(std::vector<RuntimeValPtr> args)
         buffer->data[i] += (short)(sample * 32768);
     }
 
-    std::cout << "written wave.\n";
+    std::cout << "----written wave----\n";
+
+    desimplify_wave(wave);
 
     return nullptr;
 }
 
 double Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
 {
-    // Create and enter new scope
-    new_scope();
-
     if (Wave::global_sample == 0) {
         wave->sample = 0;
         wave->phase = 0;
     }
 
+    wave->x = Wave::global_sample;
+
+    if (wave->fast_wave_expr == nullptr) {
+        // TODO: call desimplify_wave(wave) at some point to get rid of this memory
+        simplify_wave(wave);
+    }
+
     // Evaluate height of wave with // TODO add panning
     // height = waveform(phase + phaseoffset) * vol
-    scopes.back()->create_var("x", std::make_shared<Number>(Wave::global_sample));
-    RuntimeValPtr freq = evaluate_expr(wave->freq_expr);
-    RuntimeValPtr phase_offset = evaluate_expr(wave->phase_expr);
-    RuntimeValPtr vol = evaluate_expr(wave->vol_expr);
+    RuntimeValPtr freq = evaluate_expr(wave->fast_freq_expr);
+    RuntimeValPtr phase_offset = evaluate_expr(wave->fast_phase_expr);
+    RuntimeValPtr vol = evaluate_expr(wave->fast_vol_expr);
 
     if (freq->type != RuntimeType::Number
         || phase_offset->type != RuntimeType::Number
@@ -600,8 +700,8 @@ double Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
     double phase_offset_num = std::dynamic_pointer_cast<Number>(phase_offset)->value;
     double vol_num = std::dynamic_pointer_cast<Number>(vol)->value;
 
-    scopes.back()->create_var("x", std::make_shared<Number>(wave->phase + phase_offset_num));
-    RuntimeValPtr height = evaluate_expr(wave->wave_expr);
+    wave->x = wave->phase + phase_offset_num;
+    RuntimeValPtr height = evaluate_expr(wave->fast_wave_expr);
 
     if (height->type != RuntimeType::Number) {
         std::cout << "All wave functions must evaluate to numbers.\n";
@@ -619,8 +719,6 @@ double Interpreter::get_sample_and_advance(std::shared_ptr<Wave> wave)
         // phase += 2pi*(freq at sample)/samplerate
         wave->phase += TAU * (freq_num) / 44100;
     }
-
-    exit_scope();
 
     return final_height;
 }

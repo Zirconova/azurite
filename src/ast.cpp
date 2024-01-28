@@ -151,7 +151,6 @@ WaveDeclaration::~WaveDeclaration()
     delete pan_expr;
 }
 
-
 void printAST(Stmt* node, int indent, bool in_list)
 {
     if (in_list)

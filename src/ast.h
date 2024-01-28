@@ -9,6 +9,8 @@
 enum class NodeType
 {
     // Expression
+    RuntimeValPointerNode,
+    NumberPointerNode,
     NumericLiteral,
     StringLiteral,
     Identifier,
@@ -252,7 +254,6 @@ public:
     );
     ~WaveDeclaration();
 };
-
 
 void printAST(Stmt* node, int indent = 0, bool in_list = false);
 

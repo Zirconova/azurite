@@ -84,7 +84,14 @@ public:
     Expr* vol_expr;
     Expr* pan_expr;
 
+    Expr* fast_wave_expr;
+    Expr* fast_freq_expr;
+    Expr* fast_phase_expr;
+    Expr* fast_vol_expr;
+    Expr* fast_pan_expr;
+
     double phase;
+    double x;
     int sample;
     static int global_sample;
 

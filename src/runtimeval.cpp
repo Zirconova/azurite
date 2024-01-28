@@ -48,8 +48,15 @@ Wave::Wave(
         Expr* vol_expr,
         Expr* pan_expr
         )
-    : RuntimeVal(RuntimeType::Wave), phase(0.0), sample(0),
-    wave_expr(wave_expr), freq_expr(freq_expr), phase_expr(phase_expr), vol_expr(vol_expr), pan_expr(pan_expr) {}
+    : RuntimeVal(RuntimeType::Wave), phase(0.0), x(0.0), sample(0),
+    wave_expr(wave_expr), freq_expr(freq_expr), phase_expr(phase_expr), vol_expr(vol_expr), pan_expr(pan_expr)
+{
+    fast_wave_expr = nullptr;
+    fast_freq_expr = nullptr;
+    fast_phase_expr = nullptr;
+    fast_vol_expr = nullptr;
+    fast_pan_expr = nullptr;
+}
 
 bool Wave::get_truth()
 {

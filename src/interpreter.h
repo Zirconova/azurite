@@ -12,8 +12,10 @@
 #include "runtimelib.h"
 #include "error.h"
 #include "wavewriter.h"
+#include "exprreduction.h"
 
 typedef std::shared_ptr<RuntimeVal> RuntimeValPtr;
+
 
 class Interpreter
 {
@@ -47,6 +49,8 @@ private:
     RuntimeValPtr evaluate_forstmt(ForStmt* node);
     RuntimeValPtr evaluate_returnstmt(ReturnStmt* node);
     RuntimeValPtr evaluate_expr(Expr* node);
+    RuntimeValPtr evaluate_runtimevalpointernode(RuntimeValPointerNode* node);
+    RuntimeValPtr evaluate_numberpointernode(NumberPointerNode* node);
     RuntimeValPtr evaluate_identifier(Identifier* node);
     RuntimeValPtr evaluate_stringliteral(StringLiteral* node);
     RuntimeValPtr evaluate_numericliteral(NumericLiteral* node);
@@ -59,6 +63,10 @@ private:
     RuntimeValPtr evaluate_unaryexpr(UnaryExpr* node);
     RuntimeValPtr evaluate_listdeclaration(ListDeclaration* node);
     RuntimeValPtr evaluate_wavedeclaration(WaveDeclaration* node);
+
+    void simplify_wave(std::shared_ptr<Wave> wave);
+    void desimplify_wave(std::shared_ptr<Wave> wave);
+    Expr* simplify_expr(Expr* node, std::shared_ptr<Wave> wave);
 
     RuntimeValPtr write_wave(std::vector<RuntimeValPtr> args);
     double get_sample_and_advance(std::shared_ptr<Wave> wave);
