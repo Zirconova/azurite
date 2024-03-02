@@ -588,9 +588,8 @@ Expr* Interpreter::simplify_expr(Expr* node, std::shared_ptr<Wave> wave)
         }
         case NodeType::MemberExpr: {
             MemberExpr* dnode = (MemberExpr*)node;
-            RuntimeValPtr* num_ = evaluate_memberexpr(dnode);
-            std::shared_ptr<Number> num = std::dynamic_pointer_cast<Number>(*num_);
-            return new NumericLiteral(num->value, dnode->begin);
+            RuntimeValPtr* val = evaluate_memberexpr(dnode);
+            return new RuntimeValPointerNode(*val, dnode->begin);
         }
         case NodeType::CallExpr: {
             CallExpr* dnode = (CallExpr*)node;
