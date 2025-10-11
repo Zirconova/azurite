@@ -35,6 +35,7 @@ struct wave16Header {
 
 void write_wave_file(std::string filename, WaveBuffer* buffer, int num_channels)
 {
+    std::cout << "trying to write to wav\n";
     std::ofstream file(filename, std::ios::out | std::ios::binary);
 
     wave16Header header(buffer->length, num_channels);

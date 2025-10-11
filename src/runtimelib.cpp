@@ -1,6 +1,6 @@
 #include "runtimelib.h"
 
-std::unordered_set<std::string> Azurite::builtins = {"print", "sin", "floor", "abs", "rnd"};
+std::unordered_set<std::string> Azurite::builtins = {"print", "sin", "floor", "abs", "rnd", "sqrt"};
 
 void Azurite::initialize_runtimelib()
 {
@@ -23,6 +23,8 @@ RuntimeValPtr Azurite::call_runtimelib(std::string name, std::vector<RuntimeValP
         return Azurite::abs(args);
     } else if (name == "rnd") {
         return Azurite::rnd(args);
+    } else if (name == "sqrt") {
+        return Azurite::sqrt(args);
     }
 }
 
@@ -93,4 +95,15 @@ RuntimeValPtr Azurite::rnd(std::vector<RuntimeValPtr>& args)
 {
     double random = (float)(rand()) / ((float)(RAND_MAX) + 1);
     return std::make_shared<Number>(random);
+}
+
+RuntimeValPtr Azurite::sqrt(std::vector<RuntimeValPtr>& args)
+{
+    if (args[0]->type != RuntimeType::Number) {
+        std::cout << "Cannot take sqrt of this type.\n";
+        exit(1);
+    }
+    
+    std::shared_ptr<Number> arg_num = std::dynamic_pointer_cast<Number>(args[0]);
+    return std::make_shared<Number>(std::sqrt(arg_num->value));
 }
