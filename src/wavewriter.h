@@ -5,7 +5,7 @@ class WaveBuffer
 {
 public:
     int length;
-    short* data;
+    float* data;
 
     WaveBuffer();
     ~WaveBuffer();

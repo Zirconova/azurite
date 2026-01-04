@@ -2,7 +2,7 @@
 
 WaveBuffer::WaveBuffer() : length(0)
 {
-    data = new short[1000000];
+    data = new float[1000000];
 }
 WaveBuffer::~WaveBuffer()
 {
@@ -40,8 +40,17 @@ void write_wave_file(std::string filename, WaveBuffer* buffer, int num_channels)
 
     wave16Header header(buffer->length, num_channels);
 
+    // convert float buffer to short buffer
+    short* pcm_data = new short[1000000];
+    for (int i = 0; i < buffer->length; i++)
+    {
+        pcm_data[i] = (short) (((buffer->data[i] + 1.f) * 0.5f * 65535.f / 65536.f * 2.f - 1.f) * 32768); 
+    }
+
     file.write((const char*)&header, 44);
-    file.write((const char*)(buffer->data), header.data_size);
+    file.write((const char*)(pcm_data), header.data_size);
+
+    delete [] pcm_data;
 
     file.close();
 }
