@@ -3,6 +3,6 @@ project(azurite)
 
 file(GLOB sources src/*.cpp src/*.h)
 
-target_compile_options(az PUBLIC -O3)
-
 add_executable(az ${sources})
+
+target_compile_options(az PUBLIC -O)
